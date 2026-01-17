@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- 网页头部：设置编码、标题、视口适配（移动端） -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 网页标题，会显示在浏览器标签栏 -->
+    <title>GitHub Pages 测试静态网页</title>
+    <!-- 内部 CSS 样式：美化页面，静态网页的样式可内嵌/外联 -->
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+
+        /* 页面主体容器 */
+        body {
+            background-color: #f5f5f5;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* 头部样式 */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 内容区域样式 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* 按钮样式 */
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 底部样式 */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+
+        /* 动态显示的信息样式 */
+        #info {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #e3f2fd;
+            color: #1565c0;
+            display: none; /* 默认隐藏 */
+        }
+    </style>
+</head>
+
+<!-- 网页主体：可见内容区域 -->
+<body>
+    <!-- 页面头部 -->
+    <header>
+        <h1>我的测试静态网页</h1>
+        <p>部署到 GitHub Pages 的静态页面示例</p>
+    </header>
+
+    <!-- 核心内容容器 -->
+    <div class="container">
+        <div class="card">
+            <h2>静态网页特点</h2>
+            <ul>
+                <li>纯前端代码（HTML/CSS/JS），无后端依赖</li>
+                <li>内容固定，部署后无需服务器动态生成</li>
+                <li>可直接部署到 GitHub Pages 等静态托管服务</li>
+                <li>支持前端 JS 实现简单交互（如下方按钮）</li>
+            </ul>
+
+            <!-- 交互按钮：触发JS逻辑 -->
+            <button id="btn">点击显示测试信息</button>
+            
+            <!-- 动态显示的信息区域 -->
+            <div id="info">
+                ✅ 这是静态网页的前端JS交互效果！<br>
+                📍 当前时间：<span id="time"></span><br>
+                🚀 该页面可直接上传到 GitHub Pages 访问。
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>部署说明</h2>
+            <p>将此文件保存为 <code>index.html</code>，上传到你创建的 <code>用户名.github.io</code> 仓库，即可通过 <code>https://用户名.github.io</code> 访问。</p>
+        </div>
+    </div>
+
+    <!-- 页面底部 -->
+    <footer>
+        <p>测试静态网页 © 2026</p>
+    </footer>
+
+    <!-- 前端 JavaScript：实现简单交互（静态网页的交互仅在浏览器端运行） -->
+    <script>
+        // 获取按钮和信息区域元素
+        const btn = document.getElementById('btn');
+        const info = document.getElementById('info');
+        const timeSpan = document.getElementById('time');
+
+        // 给按钮添加点击事件
+        btn.addEventListener('click', function() {
+            // 显示信息区域
+            info.style.display = 'block';
+            // 获取并显示当前时间（前端JS计算，无后端参与）
+            const now = new Date();
+            timeSpan.textContent = now.toLocaleString('zh-CN');
+        });
+    </script>
+</body>
+</html>
