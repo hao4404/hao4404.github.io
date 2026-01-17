@@ -44,7 +44,8 @@ jobs:
                       "**更新作者**：'"$COMMIT_AUTHOR"'\n\n" +
                       "**提交信息**：'"$COMMIT_MESSAGE"'\n\n" +
                       "**提交详情**：[点击查看]('"$COMMIT_URL"')\n\n" +
-                      "**更新文件**：index.html"
+                      "**更新文件**：index.html"+
+                      "来自hao4404"
             },
             "at": {
               "isAtAll": false  # 是否@所有人，false 则只推送消息，true 会@群里所有人
