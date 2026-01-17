@@ -1,0 +1,52 @@
+# 工作流名称，会显示在 GitHub Actions 面板中
+name: 监测index.html更新并推送通知
+
+# 触发条件：只有当 push 操作修改了根目录的 index.html 文件时，才触发这个工作流
+on:
+  push:
+    paths:
+      - 'index.html'  # 只监测根目录的 index.html 文件变更，子目录可写如 'src/index.html'
+
+# 要执行的作业
+jobs:
+  send-notification:
+    # 运行环境：使用 GitHub 提供的 Ubuntu 虚拟机
+    runs-on: ubuntu-latest
+    
+    # 执行步骤
+    steps:
+      # 步骤1：拉取仓库代码（可选，但建议加，方便获取提交信息）
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 拉取最近2次提交，用于对比文件变更
+
+      # 步骤2：向钉钉推送通知
+      - name: 发送钉钉通知
+        env:
+          # 从仓库 Secrets 中读取钉钉 Webhook 地址
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+          # 获取提交作者、信息、提交哈希等关键信息
+          COMMIT_AUTHOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.event.head_commit.url }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          # 构造钉钉通知的 JSON 内容
+          curl -X POST $DINGTALK_WEBHOOK \
+          -H "Content-Type: application/json" \
+          -d '{
+            "msgtype": "markdown",
+            "markdown": {
+              "title": "index.html 更新通知",
+              "text": "### 🚨 静态网页主页已更新\n\n" +
+                      "**仓库名称**：'"$REPO_NAME"'\n\n" +
+                      "**更新作者**：'"$COMMIT_AUTHOR"'\n\n" +
+                      "**提交信息**：'"$COMMIT_MESSAGE"'\n\n" +
+                      "**提交详情**：[点击查看]('"$COMMIT_URL"')\n\n" +
+                      "**更新文件**：index.html"
+            },
+            "at": {
+              "isAtAll": false  # 是否@所有人，false 则只推送消息，true 会@群里所有人
+            }
+          }'
