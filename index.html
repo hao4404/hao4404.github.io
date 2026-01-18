@@ -75,6 +75,9 @@
             .food-item-signature {
                 font-size: 12px;
             }
+            .food-item-distance {
+                font-size: 10px;
+            }
             .food-item-status {
                 font-size: 11px;
                 padding: 2px 6px;
@@ -185,6 +188,13 @@
             display: flex;
             align-items: center;
         }
+        .food-item-distance {
+            font-size: 11px;
+            color: #999;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+        }
         .food-item-icon {
             margin-right: 6px;
         }
@@ -213,6 +223,39 @@
             padding: 40px 20px;
             color: #999;
             font-size: 14px;
+        }
+        /* 定位按钮 */
+        .locate-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+        .locate-btn:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transform: scale(1.05);
+        }
+        .locate-btn:active {
+            transform: scale(0.95);
+        }
+        .locate-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         /* 选点提示框 */
         .coord-hint {
@@ -281,9 +324,16 @@
             background: #e0e0e0;
         }
         @media (max-width: 768px) {
-            .coord-hint {
+            .locate-btn {
                 top: 10px;
                 right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            .coord-hint {
+                top: 10px;
+                right: 60px;
                 left: 10px;
                 max-width: none;
             }
@@ -308,7 +358,9 @@
     </div>
 
     <!-- 右侧地图容器 -->
-    <div id="map" class="map-container"></div>
+    <div id="map" class="map-container">
+        <button id="locateBtn" class="locate-btn" onclick="locateUser()" title="定位到我的位置">📍</button>
+    </div>
 
     <!-- 选点提示框 -->
     <div id="coordHint" class="coord-hint" style="display: none;">
@@ -351,6 +403,9 @@
         // ==================== 代码区域（无需修改） ====================
         let map, markers = [];
         let isPickingMode = false;
+        let userPosition = null; // 存储用户位置
+        let geolocation = null; // 地理定位插件实例
+        let userMarker = null; // 用户位置标记
 
         // 切换选点模式
         function togglePickingMode() {
@@ -410,7 +465,7 @@
                 securityJsCode: AMAP_CONFIG.securityJsCode
             };
             const script = document.createElement('script');
-            script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_CONFIG.apiKey}`;
+            script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_CONFIG.apiKey}&plugin=AMap.Geolocation`;
             script.onload = initMap;
             script.onerror = function() {
                 alert('高德地图API加载失败！请检查网络连接');
@@ -431,6 +486,18 @@
                 // 地图加载完成后添加标记
                 map.on('complete', function() {
                     console.log('✅ 地图加载成功！');
+
+                    // 初始化地理定位插件
+                    geolocation = new AMap.Geolocation({
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        position: 'RB',
+                        zoomToAccuracy: true,
+                        buttonPosition: 'RB'
+                    });
+
+                    // 页面加载时自动定位
+                    locateUser();
                     renderFoodMap();
                 });
 
@@ -465,6 +532,63 @@
             }
         }
 
+        // 计算两点之间的直线距离（单位：公里）
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // 地球半径（公里）
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // 定位到用户位置
+        function locateUser() {
+            const btn = document.getElementById('locateBtn');
+            btn.classList.add('loading');
+
+            geolocation.getCurrentPosition(function(status, result) {
+                btn.classList.remove('loading');
+
+                if (status === 'complete') {
+                    userPosition = [result.position.getLng(), result.position.getLat()];
+                    console.log('📍 用户定位成功：', userPosition);
+
+                    // 如果已有用户标记，更新其位置
+                    if (userMarker) {
+                        userMarker.setPosition(userPosition);
+                    } else {
+                        // 创建用户位置标记
+                        userMarker = new AMap.Marker({
+                            position: userPosition,
+                            content: `<div style="
+                                width: 20px;
+                                height: 20px;
+                                background: #1890ff;
+                                border: 3px solid white;
+                                border-radius: 50%;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                            "></div>`,
+                            anchor: 'center',
+                            offset: new AMap.Pixel(0, 0)
+                        });
+                        userMarker.addTo(map);
+                    }
+
+                    // 定位到用户位置
+                    map.setZoomAndCenter(16, userPosition);
+
+                    // 更新列表中的距离显示
+                    renderFoodMap();
+                } else {
+                    console.error('❌ 定位失败：', result);
+                    alert('定位失败，请检查定位权限');
+                }
+            });
+        }
+
         // 渲染美食地图和列表
         function renderFoodMap() {
             // 清空之前的标记和列表
@@ -495,6 +619,21 @@
                 const statusText = item.visited ? '✅ 已去过' : '❌ 未去';
                 const statusLabelClass = item.visited ? 'visited' : 'unvisited';
 
+                // 计算距离
+                let distanceHtml = '';
+                if (userPosition) {
+                    const distance = calculateDistance(
+                        userPosition[1], userPosition[0],
+                        item.coords[1], item.coords[0]
+                    );
+                    distanceHtml = `
+                        <div class="food-item-distance">
+                            <span class="food-item-icon">📏</span>
+                            距你 ${distance.toFixed(1)} km
+                        </div>
+                    `;
+                }
+
                 return `
                     <li class="food-item ${statusClass}" onclick="panToMarker(${index})">
                         <div class="food-item-status ${statusLabelClass}">${statusText}</div>
@@ -502,6 +641,7 @@
                         <div class="food-item-signature">
                             <span class="food-item-icon">🍜</span>${item.signature}
                         </div>
+                        ${distanceHtml}
                     </li>
                 `;
             }).join('');
