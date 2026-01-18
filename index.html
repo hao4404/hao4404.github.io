@@ -24,6 +24,77 @@
             border-right: 1px solid #dee2e6;
             overflow-y: auto;
         }
+        /* 右侧地图容器 */
+        .map-container {
+            flex: 1;
+            height: 100vh;
+            min-width: 300px;
+        }
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column-reverse;
+            }
+            .list-container {
+                width: 100%;
+                height: 40vh;
+                padding: 15px;
+                border-right: none;
+                border-top: 1px solid #dee2e6;
+            }
+            .map-container {
+                height: 60vh;
+                min-width: 100%;
+            }
+            .list-title {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+            .stats-container {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+            .stats-title {
+                font-size: 13px;
+            }
+            .progress-bar {
+                height: 20px;
+            }
+            .progress-fill {
+                font-size: 11px;
+            }
+            .food-item {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            .food-item-name {
+                font-size: 15px;
+            }
+            .food-item-address,
+            .food-item-food {
+                font-size: 12px;
+            }
+            .food-item-status {
+                font-size: 11px;
+                padding: 2px 6px;
+            }
+        }
+        @media (max-width: 480px) {
+            .list-container {
+                height: 45vh;
+                padding: 12px;
+            }
+            .map-container {
+                height: 55vh;
+            }
+            .food-item-name {
+                font-size: 14px;
+            }
+            .food-item-address,
+            .food-item-food {
+                font-size: 11px;
+            }
+        }
         .list-title {
             font-size: 20px;
             margin-bottom: 20px;
@@ -138,12 +209,6 @@
             color: #ff4d4f;
             border: 1px solid #ffa39e;
         }
-        /* 右侧地图容器 */
-        .map-container {
-            flex: 1;
-            height: 100vh;
-            min-width: 300px;
-        }
         /* 无数据提示 */
         .no-data {
             text-align: center;
@@ -179,7 +244,7 @@
             securityJsCode: '0a12f15c96b7cc2513e09ca71f7b0915',
             apiKey: 'c1847c6d19b569629a3d73eab136e9f1',
             defaultCenter: [114.2707, 30.5928], // 武汉市江汉区中心坐标
-            defaultZoom: 14
+            defaultZoom: window.innerWidth <= 768 ? 15 : 14
         };
 
         // ==================== 美食数据配置区域 ====================
@@ -207,6 +272,14 @@
                 food: "汤圆、粽子",
                 lng: 114.2754,
                 lat: 30.5956,
+                visited: false
+            },
+            {
+                name: "老汉口",
+                address: "江汉区沿江大道",
+                food: "热干面、豆皮",
+                lng: 114.2707,
+                lat: 30.5928,
                 visited: false
             }
         ];
@@ -299,13 +372,13 @@
         // 创建地图标记
         function createMarker(item, index) {
             // 使用食物emoji作为标记
-            const foodIcon = '🍜';
+            const foodIcon = '🥣';
 
             const marker = new AMap.Marker({
                 position: [item.lng, item.lat],
                 title: item.name,
                 content: `<div style="
-                    font-size: 32px;
+                    font-size: ${window.innerWidth <= 768 ? '28px' : '32px'};
                     line-height: 1;
                     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
                     cursor: pointer;
@@ -317,10 +390,10 @@
 
             const infoWindow = new AMap.InfoWindow({
                 content: `
-                    <div style="padding: 10px; font-size: 14px; min-width: 200px;">
-                        <h4 style="margin-bottom: 8px; color: #0091ff;">${item.name}</h4>
-                        <p style="margin: 5px 0; color: #666;">📍 ${item.address}</p>
-                        <p style="margin: 5px 0; color: #666;">🍜 ${item.food}</p>
+                    <div style="padding: ${window.innerWidth <= 768 ? '8px' : '10px'}; font-size: ${window.innerWidth <= 768 ? '13px' : '14px'}; min-width: ${window.innerWidth <= 768 ? '180px' : '200px'};">
+                        <h4 style="margin-bottom: ${window.innerWidth <= 768 ? '6px' : '8px'}; color: #0091ff; font-size: ${window.innerWidth <= 768 ? '15px' : '16px'};">${item.name}</h4>
+                        <p style="margin: 4px 0; color: #666;">📍 ${item.address}</p>
+                        <p style="margin: 4px 0; color: #666;">🥣 ${item.food}</p>
                     </div>
                 `,
                 offset: new AMap.Pixel(0, -30)
@@ -353,8 +426,14 @@
             if (markers[index]) {
                 const { marker, infoWindow } = markers[index];
                 map.setCenter(marker.getPosition());
-                map.setZoom(16);
+                // 移动端使用更高的缩放级别
+                map.setZoom(window.innerWidth <= 768 ? 17 : 16);
                 infoWindow.open(map, marker.getPosition());
+
+                // 移动端：滚动到地图顶部
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.map-container').scrollIntoView({ behavior: 'smooth' });
+                }
             }
         }
 
