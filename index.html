@@ -14,6 +14,7 @@
             font-family: "Microsoft Yahei", sans-serif;
             display: flex;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
         }
         /* 左侧列表容器 */
@@ -34,16 +35,17 @@
         @media (max-width: 768px) {
             body {
                 flex-direction: column-reverse;
+                height: 100dvh;
             }
             .list-container {
                 width: 100%;
-                height: 40vh;
+                height: 40dvh;
                 padding: 15px;
                 border-right: none;
                 border-top: 1px solid #dee2e6;
             }
             .map-container {
-                height: 60vh;
+                height: 60dvh;
                 min-width: 100%;
             }
             .list-title {
@@ -79,12 +81,15 @@
             }
         }
         @media (max-width: 480px) {
+            body {
+                height: 100dvh;
+            }
             .list-container {
-                height: 45vh;
+                height: 45dvh;
                 padding: 12px;
             }
             .map-container {
-                height: 55vh;
+                height: 55dvh;
             }
             .food-item-name {
                 font-size: 14px;
