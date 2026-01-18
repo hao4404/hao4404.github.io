@@ -431,6 +431,11 @@
 
                 // 地图点击事件
                 map.on('click', function(e) {
+                    // 移动端不提供选点功能
+                    if (window.innerWidth <= 768) {
+                        return;
+                    }
+
                     const lng = e.lnglat.getLng();
                     const lat = e.lnglat.getLat();
                     showCoordHint(lng, lat);
