@@ -70,8 +70,7 @@
             .food-item-name {
                 font-size: 15px;
             }
-            .food-item-address,
-            .food-item-food {
+            .food-item-signature {
                 font-size: 12px;
             }
             .food-item-status {
@@ -90,8 +89,7 @@
             .food-item-name {
                 font-size: 14px;
             }
-            .food-item-address,
-            .food-item-food {
+            .food-item-signature {
                 font-size: 11px;
             }
         }
@@ -176,16 +174,11 @@
             color: #333;
             margin-bottom: 8px;
         }
-        .food-item-address {
+        .food-item-signature {
             font-size: 13px;
             color: #666;
-            margin-bottom: 6px;
             display: flex;
             align-items: center;
-        }
-        .food-item-food {
-            font-size: 13px;
-            color: #666;
         }
         .food-item-icon {
             margin-right: 6px;
@@ -216,6 +209,80 @@
             color: #999;
             font-size: 14px;
         }
+        /* 选点提示框 */
+        .coord-hint {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 320px;
+        }
+        .coord-hint h4 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .coord-hint-close {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #999;
+            line-height: 1;
+        }
+        .coord-hint-close:hover {
+            color: #666;
+        }
+        .coord-code {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+        .coord-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .coord-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .coord-btn-copy {
+            background: #0091ff;
+            color: white;
+        }
+        .coord-btn-copy:hover {
+            background: #0077e6;
+        }
+        .coord-btn-close {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .coord-btn-close:hover {
+            background: #e0e0e0;
+        }
+        @media (max-width: 768px) {
+            .coord-hint {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -238,54 +305,99 @@
     <!-- 右侧地图容器 -->
     <div id="map" class="map-container"></div>
 
+    <!-- 选点提示框 -->
+    <div id="coordHint" class="coord-hint" style="display: none;">
+        <span class="coord-hint-close" onclick="closeCoordHint()">&times;</span>
+        <h4>📍 已选择点位</h4>
+        <div class="coord-code" id="coordCode"></div>
+        <div class="coord-actions">
+            <button class="coord-btn coord-btn-copy" onclick="copyCoord()">📋 复制 JSON</button>
+            <button class="coord-btn coord-btn-close" onclick="closeCoordHint()">✖ 关闭</button>
+        </div>
+    </div>
+
     <script type="text/javascript">
+        // ==================== 美食数据配置区域 ====================
+        // 在这里添加、删除或修改美食点位
+        const FOOD_LOCATIONS = [
+            { name: "小宝味道生活馆", signature: "糯米圆子", coords: [114.257971,30.635658], visited: true },
+            { name: "襄阳牛肉面", signature: "牛肉面、海带豆腐面", coords: [114.265959, 30.617359], visited: true, url: "" },
+            { name: "汉川搀汤面", signature: "瘦肉面", coords: [114.266678, 30.619304], visited: true, url: "" }
+        ];
+
         // ==================== 配置区域 ====================
         const AMAP_CONFIG = {
             securityJsCode: '0a12f15c96b7cc2513e09ca71f7b0915',
             apiKey: 'c1847c6d19b569629a3d73eab136e9f1',
-            defaultCenter: [114.2707, 30.5928], // 武汉市江汉区中心坐标
+            defaultCenter: calculateCenter(FOOD_LOCATIONS), // 根据现有点位计算中心
             defaultZoom: window.innerWidth <= 768 ? 15 : 14
         };
 
-        // ==================== 美食数据配置区域 ====================
-        // 在这里添加、删除或修改美食点位
-        const FOOD_LOCATIONS = [
-            {
-                name: "蔡林记",
-                address: "江汉区江汉路步行街",
-                food: "热干面、豆皮",
-                lng: 114.2908,
-                lat: 30.5785,
-                visited: true  // true=去过, false=没去过
-            },
-            {
-                name: "四季美",
-                address: "江汉区中山大道",
-                food: "汤包",
-                lng: 114.2856,
-                lat: 30.5823,
-                visited: false
-            },
-            {
-                name: "五芳斋",
-                address: "江汉区新华路",
-                food: "汤圆、粽子",
-                lng: 114.2754,
-                lat: 30.5956,
-                visited: false
-            },
-            {
-                name: "老汉口",
-                address: "江汉区沿江大道",
-                food: "热干面、豆皮",
-                lng: 114.2707,
-                lat: 30.5928,
-                visited: false
+        // 计算点位的中心坐标
+        function calculateCenter(locations) {
+            if (locations.length === 0) {
+                return [114.2707, 30.5928]; // 默认武汉市江汉区中心
             }
-        ];
+            const sumLng = locations.reduce((sum, loc) => sum + loc.coords[0], 0);
+            const sumLat = locations.reduce((sum, loc) => sum + loc.coords[1], 0);
+            return [sumLng / locations.length, sumLat / locations.length];
+        }
 
         // ==================== 代码区域（无需修改） ====================
         let map, markers = [];
+        let isPickingMode = false;
+
+        // 切换选点模式
+        function togglePickingMode() {
+            isPickingMode = !isPickingMode;
+            const mapContainer = document.getElementById('map');
+            if (isPickingMode) {
+                mapContainer.style.cursor = 'crosshair';
+                alert('选点模式已开启，请点击地图任意位置选择点位');
+            } else {
+                mapContainer.style.cursor = 'default';
+            }
+        }
+
+        // 显示选点提示
+        function showCoordHint(lng, lat) {
+            const hint = document.getElementById('coordHint');
+            const code = document.getElementById('coordCode');
+            const jsonTemplate = `{ name: "店名", signature: "特色菜", coords: [${lng.toFixed(6)}, ${lat.toFixed(6)}], visited: false, url: "" }`;
+            code.textContent = jsonTemplate;
+            hint.style.display = 'block';
+            isPickingMode = false;
+            document.getElementById('map').style.cursor = 'default';
+        }
+
+        // 关闭选点提示
+        function closeCoordHint() {
+            document.getElementById('coordHint').style.display = 'none';
+        }
+
+        // 复制坐标
+        function copyCoord() {
+            const code = document.getElementById('coordCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('✅ 已复制到剪贴板！');
+            }).catch(() => {
+                alert('❌ 复制失败，请手动复制');
+            });
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCoordHint();
+                if (isPickingMode) {
+                    isPickingMode = false;
+                    document.getElementById('map').style.cursor = 'default';
+                }
+            }
+            if (e.key === 'p' || e.key === 'P') {
+                togglePickingMode();
+            }
+        });
 
         // 动态加载高德地图API
         function loadAMap() {
@@ -315,6 +427,27 @@
                 map.on('complete', function() {
                     console.log('✅ 地图加载成功！');
                     renderFoodMap();
+                });
+
+                // 地图点击事件
+                map.on('click', function(e) {
+                    const lng = e.lnglat.getLng();
+                    const lat = e.lnglat.getLat();
+                    showCoordHint(lng, lat);
+
+                    // 在点击位置添加临时标记
+                    const tempMarker = new AMap.Marker({
+                        position: [lng, lat],
+                        content: `<div style="font-size: 32px;">📍</div>`,
+                        anchor: 'bottom-center',
+                        offset: new AMap.Pixel(0, 3)
+                    });
+                    tempMarker.addTo(map);
+
+                    // 3秒后移除临时标记
+                    setTimeout(() => {
+                        tempMarker.setMap(null);
+                    }, 300);
                 });
             } catch (e) {
                 alert('地图初始化失败：' + e.message);
@@ -356,11 +489,8 @@
                     <li class="food-item ${statusClass}" onclick="panToMarker(${index})">
                         <div class="food-item-status ${statusLabelClass}">${statusText}</div>
                         <div class="food-item-name">${item.name}</div>
-                        <div class="food-item-address">
-                            <span class="food-item-icon">📍</span>${item.address}
-                        </div>
-                        <div class="food-item-food">
-                            <span class="food-item-icon">🍜</span>${item.food}
+                        <div class="food-item-signature">
+                            <span class="food-item-icon">🍜</span>${item.signature}
                         </div>
                     </li>
                 `;
@@ -375,7 +505,7 @@
             const foodIcon = '🥣';
 
             const marker = new AMap.Marker({
-                position: [item.lng, item.lat],
+                position: item.coords,
                 title: item.name,
                 content: `<div style="
                     font-size: ${window.innerWidth <= 768 ? '28px' : '32px'};
@@ -384,16 +514,17 @@
                     cursor: pointer;
                     transition: transform 0.2s;
                 ">${foodIcon}</div>`,
-                anchor: 'center',
-                offset: new AMap.Pixel(0, 0)
+                anchor: 'bottom-center',
+                offset: new AMap.Pixel(0, 5)
             });
 
             const infoWindow = new AMap.InfoWindow({
                 content: `
                     <div style="padding: ${window.innerWidth <= 768 ? '8px' : '10px'}; font-size: ${window.innerWidth <= 768 ? '13px' : '14px'}; min-width: ${window.innerWidth <= 768 ? '180px' : '200px'};">
                         <h4 style="margin-bottom: ${window.innerWidth <= 768 ? '6px' : '8px'}; color: #0091ff; font-size: ${window.innerWidth <= 768 ? '15px' : '16px'};">${item.name}</h4>
-                        <p style="margin: 4px 0; color: #666;">📍 ${item.address}</p>
-                        <p style="margin: 4px 0; color: #666;">🥣 ${item.food}</p>
+                        <p style="margin: 4px 0; color: #666;">🍜 ${item.signature}</p>
+                        ${item.url ? `<a href="${item.url}" target="_blank" style="display: block; margin-top: 8px; padding: 5px 0; background: #52c41a; color: white; text-align: center; border-radius: 4px; text-decoration: none; font-size: ${window.innerWidth <= 768 ? '11px' : '12px'};">📝 探店链接</a>` : ''}
+                        <a href="https://uri.amap.com/navigation?to=${item.coords[0]},${item.coords[1]},${encodeURIComponent(item.name)}&mode=car&src=美食地图" target="_blank" style="display: block; margin-top: ${item.url ? '6px' : '10px'}; padding: 6px 0; background: #0091ff; color: white; text-align: center; border-radius: 4px; text-decoration: none; font-size: ${window.innerWidth <= 768 ? '12px' : '13px'};">🚗 导航前往</a>
                     </div>
                 `,
                 offset: new AMap.Pixel(0, -30)
@@ -425,10 +556,25 @@
         function panToMarker(index) {
             if (markers[index]) {
                 const { marker, infoWindow } = markers[index];
-                map.setCenter(marker.getPosition());
-                // 移动端使用更高的缩放级别
-                map.setZoom(window.innerWidth <= 768 ? 17 : 16);
-                infoWindow.open(map, marker.getPosition());
+                const targetZoom = window.innerWidth <= 768 ? 17 : 16;
+
+                // 先关闭所有打开的信息窗口
+                markers.forEach(m => m.infoWindow.close());
+
+                // 调整中心位置偏移，考虑信息窗口的高度
+                const position = marker.getPosition();
+                const offsetY = window.innerWidth <= 768 ? 0.001 : 0.0015;
+                const adjustedPosition = new AMap.LngLat(position.getLng(), position.getLat() + offsetY);
+
+                // 使用 setZoomAndCenter 完成定位和缩放
+                map.setZoomAndCenter(targetZoom, adjustedPosition);
+
+                // 监听地图移动结束事件，然后打开信息窗口
+                const onMoveEnd = function() {
+                    infoWindow.open(map, marker.getPosition());
+                    map.off('moveend', onMoveEnd);
+                };
+                map.on('moveend', onMoveEnd);
 
                 // 移动端：滚动到地图顶部
                 if (window.innerWidth <= 768) {
