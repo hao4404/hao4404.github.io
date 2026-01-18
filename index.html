@@ -1,150 +1,365 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<!-- 网页头部：设置编码、标题、视口适配（移动端） -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 网页标题，会显示在浏览器标签栏 -->
-    <title>GitHub Pages 测试静态网页</title>
-    <!-- 内部 CSS 样式：美化页面，静态网页的样式可内嵌/外联 -->
+    <title>Haoの美食地图</title>
     <style>
-        /* 全局样式重置 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "微软雅黑", sans-serif;
         }
-
-        /* 页面主体容器 */
         body {
-            background-color: #f5f5f5;
-            line-height: 1.6;
-            color: #333;
+            font-family: "Microsoft Yahei", sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
-
-        /* 头部样式 */
-        header {
-            background-color: #2c3e50;
-            color: white;
+        /* 左侧列表容器 */
+        .list-container {
+            width: 380px;
             padding: 20px;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+        }
+        .list-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
             text-align: center;
-            margin-bottom: 30px;
+            font-weight: bold;
         }
-
-        /* 内容区域样式 */
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* 卡片样式 */
-        .card {
+        .stats-container {
             background: white;
-            padding: 25px;
+            border: 1px solid #e8e8e8;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
             margin-bottom: 20px;
         }
-
-        /* 按钮样式 */
-        button {
-            background-color: #3498db;
+        .stats-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            height: 24px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #52c41a, #73d13d);
+            border-radius: 12px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 15px;
+            font-size: 12px;
+            font-weight: bold;
         }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
-        /* 底部样式 */
-        footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 30px;
+        .stats-detail {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
             color: #666;
-            border-top: 1px solid #eee;
         }
-
-        /* 动态显示的信息样式 */
-        #info {
-            margin-top: 20px;
+        .stats-visited {
+            color: #52c41a;
+        }
+        .stats-unvisited {
+            color: #ff4d4f;
+        }
+        .food-list {
+            list-style: none;
+        }
+        .food-item {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
             padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .food-item.visited {
+            border-left: 4px solid #52c41a;
+        }
+        .food-item.unvisited {
+            border-left: 4px solid #ff4d4f;
+        }
+        .food-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #0091ff;
+        }
+        .food-item-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .food-item-address {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        .food-item-food {
+            font-size: 13px;
+            color: #666;
+        }
+        .food-item-icon {
+            margin-right: 6px;
+        }
+        .food-item-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 12px;
+            padding: 2px 8px;
             border-radius: 4px;
-            background-color: #e3f2fd;
-            color: #1565c0;
-            display: none; /* 默认隐藏 */
+            font-weight: bold;
+        }
+        .food-item-status.visited {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        .food-item-status.unvisited {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border: 1px solid #ffa39e;
+        }
+        /* 右侧地图容器 */
+        .map-container {
+            flex: 1;
+            height: 100vh;
+            min-width: 300px;
+        }
+        /* 无数据提示 */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 14px;
         }
     </style>
 </head>
-
-<!-- 网页主体：可见内容区域 -->
 <body>
-    <!-- 页面头部 -->
-    <header>
-        <h1>我的测试静态网页</h1>
-        <p>部署到 GitHub Pages 的静态页面示例</p>
-    </header>
-
-    <!-- 核心内容容器 -->
-    <div class="container">
-        <div class="card">
-            <h2>静态网页特点</h2>
-            <ul>
-                <li>纯前端代码（HTML/CSS/JS），无后端依赖</li>
-                <li>内容固定，部署后无需服务器动态生成</li>
-                <li>可直接部署到 GitHub Pages 等静态托管服务</li>
-                <li>支持前端 JS 实现简单交互（如下方按钮）</li>
-            </ul>
-
-            <!-- 交互按钮：触发JS逻辑 -->
-            <button id="btn">点击显示测试信息</button>
-            
-            <!-- 动态显示的信息区域 -->
-            <div id="info">
-                ✅ 这是静态网页的前端JS交互效果！耶！耶！<br>
-                📍 当前时间：<span id="time"></span><br>
-                🚀 该页面可直接上传到 GitHub Pages 访问。
+    <!-- 左侧美食列表 -->
+    <div class="list-container">
+        <h3 class="list-title">Haoの美食地图</h3>
+        <div class="stats-container">
+            <div class="stats-title">📊 探店进度</div>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill" style="width: 0%">0%</div>
+            </div>
+            <div class="stats-detail">
+                <span class="stats-visited">✅ 已去过: <span id="visitedCount">0</span></span>
+                <span class="stats-unvisited">❌ 未去: <span id="unvisitedCount">0</span></span>
             </div>
         </div>
-
-        <div class="card">
-            <h2>部署说明</h2>
-            <p>将此文件保存为 <code>index.html</code>，上传到你创建的 <code>用户名.github.io</code> 仓库，即可通过 <code>https://用户名.github.io</code> 访问。</p>
-        </div>
+        <ul id="foodList" class="food-list"></ul>
     </div>
 
-    <!-- 页面底部 -->
-    <footer>
-        <p>测试静态网页 © 2026</p>
-    </footer>
+    <!-- 右侧地图容器 -->
+    <div id="map" class="map-container"></div>
 
-    <!-- 前端 JavaScript：实现简单交互（静态网页的交互仅在浏览器端运行） -->
-    <script>
-        // 获取按钮和信息区域元素
-        const btn = document.getElementById('btn');
-        const info = document.getElementById('info');
-        const timeSpan = document.getElementById('time');
+    <script type="text/javascript">
+        // ==================== 配置区域 ====================
+        const AMAP_CONFIG = {
+            securityJsCode: '0a12f15c96b7cc2513e09ca71f7b0915',
+            apiKey: 'c1847c6d19b569629a3d73eab136e9f1',
+            defaultCenter: [114.2707, 30.5928], // 武汉市江汉区中心坐标
+            defaultZoom: 14
+        };
 
-        // 给按钮添加点击事件
-        btn.addEventListener('click', function() {
-            // 显示信息区域
-            info.style.display = 'block';
-            // 获取并显示当前时间（前端JS计算，无后端参与）
-            const now = new Date();
-            timeSpan.textContent = now.toLocaleString('zh-CN');
-        });
+        // ==================== 美食数据配置区域 ====================
+        // 在这里添加、删除或修改美食点位
+        const FOOD_LOCATIONS = [
+            {
+                name: "蔡林记",
+                address: "江汉区江汉路步行街",
+                food: "热干面、豆皮",
+                lng: 114.2908,
+                lat: 30.5785,
+                visited: true  // true=去过, false=没去过
+            },
+            {
+                name: "四季美",
+                address: "江汉区中山大道",
+                food: "汤包",
+                lng: 114.2856,
+                lat: 30.5823,
+                visited: false
+            },
+            {
+                name: "五芳斋",
+                address: "江汉区新华路",
+                food: "汤圆、粽子",
+                lng: 114.2754,
+                lat: 30.5956,
+                visited: false
+            }
+        ];
+
+        // ==================== 代码区域（无需修改） ====================
+        let map, markers = [];
+
+        // 动态加载高德地图API
+        function loadAMap() {
+            window._AMapSecurityConfig = {
+                securityJsCode: AMAP_CONFIG.securityJsCode
+            };
+            const script = document.createElement('script');
+            script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_CONFIG.apiKey}`;
+            script.onload = initMap;
+            script.onerror = function() {
+                alert('高德地图API加载失败！请检查网络连接');
+            };
+            document.body.appendChild(script);
+        }
+
+        // 初始化地图
+        function initMap() {
+            try {
+                map = new AMap.Map('map', {
+                    zoom: AMAP_CONFIG.defaultZoom,
+                    center: AMAP_CONFIG.defaultCenter,
+                    resizeEnable: true,
+                    mapStyle: 'amap://styles/normal'
+                });
+
+                // 地图加载完成后添加标记
+                map.on('complete', function() {
+                    console.log('✅ 地图加载成功！');
+                    renderFoodMap();
+                });
+            } catch (e) {
+                alert('地图初始化失败：' + e.message);
+                console.error('初始化错误详情：', e);
+            }
+        }
+
+        // 渲染美食地图和列表
+        function renderFoodMap() {
+            // 清空之前的标记和列表
+            markers.forEach(m => m.marker.setMap(null));
+            markers = [];
+
+            // 计算统计信息
+            const total = FOOD_LOCATIONS.length;
+            const visited = FOOD_LOCATIONS.filter(item => item.visited).length;
+            const unvisited = total - visited;
+            const percentage = total > 0 ? Math.round((visited / total) * 100) : 0;
+
+            // 更新统计显示
+            document.getElementById('visitedCount').textContent = visited;
+            document.getElementById('unvisitedCount').textContent = unvisited;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressFill').textContent = percentage + '%';
+
+            if (FOOD_LOCATIONS.length === 0) {
+                document.getElementById('foodList').innerHTML = '<div class="no-data">暂无美食数据</div>';
+                return;
+            }
+
+            // 渲染左侧列表和地图标记
+            const listHtml = FOOD_LOCATIONS.map((item, index) => {
+                createMarker(item, index);
+                const statusClass = item.visited ? 'visited' : 'unvisited';
+                const statusText = item.visited ? '✅ 已去过' : '❌ 未去';
+                const statusLabelClass = item.visited ? 'visited' : 'unvisited';
+
+                return `
+                    <li class="food-item ${statusClass}" onclick="panToMarker(${index})">
+                        <div class="food-item-status ${statusLabelClass}">${statusText}</div>
+                        <div class="food-item-name">${item.name}</div>
+                        <div class="food-item-address">
+                            <span class="food-item-icon">📍</span>${item.address}
+                        </div>
+                        <div class="food-item-food">
+                            <span class="food-item-icon">🍜</span>${item.food}
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            document.getElementById('foodList').innerHTML = listHtml;
+        }
+
+        // 创建地图标记
+        function createMarker(item, index) {
+            // 使用食物emoji作为标记
+            const foodIcon = '🍜';
+
+            const marker = new AMap.Marker({
+                position: [item.lng, item.lat],
+                title: item.name,
+                content: `<div style="
+                    font-size: 32px;
+                    line-height: 1;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    cursor: pointer;
+                    transition: transform 0.2s;
+                ">${foodIcon}</div>`,
+                anchor: 'center',
+                offset: new AMap.Pixel(0, 0)
+            });
+
+            const infoWindow = new AMap.InfoWindow({
+                content: `
+                    <div style="padding: 10px; font-size: 14px; min-width: 200px;">
+                        <h4 style="margin-bottom: 8px; color: #0091ff;">${item.name}</h4>
+                        <p style="margin: 5px 0; color: #666;">📍 ${item.address}</p>
+                        <p style="margin: 5px 0; color: #666;">🍜 ${item.food}</p>
+                    </div>
+                `,
+                offset: new AMap.Pixel(0, -30)
+            });
+
+            marker.on('click', function() {
+                infoWindow.open(map, marker.getPosition());
+            });
+
+            marker.on('mouseover', function() {
+                const content = marker.getContent();
+                if (content && content.tagName === 'DIV') {
+                    content.style.transform = 'scale(1.2)';
+                }
+            });
+
+            marker.on('mouseout', function() {
+                const content = marker.getContent();
+                if (content && content.tagName === 'DIV') {
+                    content.style.transform = 'scale(1)';
+                }
+            });
+
+            marker.addTo(map);
+            markers.push({ marker, infoWindow, index });
+        }
+
+        // 点击列表项定位到对应标记
+        function panToMarker(index) {
+            if (markers[index]) {
+                const { marker, infoWindow } = markers[index];
+                map.setCenter(marker.getPosition());
+                map.setZoom(16);
+                infoWindow.open(map, marker.getPosition());
+            }
+        }
+
+        // 页面加载完成后执行
+        window.onload = loadAMap;
     </script>
 </body>
-
 </html>
-
-
-
